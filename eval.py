@@ -117,7 +117,11 @@ def loadFile(name):
 
 # Load scene graphs
 print("Loading scene graphs...")
-scenes = loadFile(args.scenes.format(tier = args.tier))
+try:
+    scenes = loadFile(args.scenes.format(tier = args.tier))
+except:
+    print('Failed to load scene graphs -- cannot evaluate grounding')
+    scenes = None  # for testdev
 
 # Load questions
 print("Loading questions...")
@@ -125,7 +129,11 @@ questions = loadFile(args.questions.format(tier = args.tier))
 
 # Load choices
 print("Loading choices...")
-choices = loadFile(args.choices.format(tier = args.tier))
+try:
+    choices = loadFile(args.choices.format(tier = args.tier))
+except:
+    print('Failed to load choices -- cannot evaluate validity or plausibility')
+    choices = None  # for testdev
 
 # Load predictions and turn them into a dictionary
 print("Loading predictions...")
@@ -366,11 +374,15 @@ for qid, question in tqdm(questions.items()):
         scores[answerType].append(score)
 
         # Update validity score
-        valid = belongs(predicted, choices[qid]["valid"], question)
+        valid = (
+            belongs(predicted, choices[qid]["valid"], question) if choices
+            else False)
         scores["validity"].append(toScore(valid))
 
         # Update plausibility score
-        plausible = belongs(predicted, choices[qid]["plausible"], question)
+        plausible = (
+            belongs(predicted, choices[qid]["plausible"], question) if choices
+            else False)
         scores["plausibility"].append(toScore(plausible))
 
         # Optionally compute grounding (attention) score
